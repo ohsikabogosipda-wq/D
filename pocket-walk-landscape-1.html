@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>포켓 워크</title>
+<style>
+html,body{
+  margin:0;height:100%;overflow:hidden;background:#e6e4df;
+  touch-action:none;overscroll-behavior:none;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+#dev{
+  position:fixed;inset:0;width:100%;height:100%;overflow:visible;display:block;
+  font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+}
+#lamp{fill:#b9b7b0}
+#lamp[data-mode="play"]{fill:#e2612c}
+#lamp[data-mode="ff"],#lamp[data-mode="rew"]{fill:#e2612c;animation:blink .5s linear infinite}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:.25}}
+
+#keepBtn{cursor:pointer}
+#keepBtn .kbg{fill:none;stroke:#b3b0a8;stroke-width:1.4;pointer-events:all}
+#keepBtn .ktxt{fill:#5a5f65}
+#keepBtn .kicon rect{fill:#5a5f65}
+#keepBtn .kicon path{stroke:#5a5f65}
+#keepBtn .shut{display:none}
+#keepBtn[data-on="1"] .kbg{fill:#1f2226;stroke:#1f2226}
+#keepBtn[data-on="1"] .ktxt{fill:#f3eddf}
+#keepBtn[data-on="1"] .kicon rect{fill:#f3eddf}
+#keepBtn[data-on="1"] .kicon path{stroke:#f3eddf}
+#keepBtn[data-on="1"] .shut{display:inline}
+#keepBtn[data-on="1"] .sopen{display:none}
+
+@media (prefers-reduced-motion:reduce){
+  #lamp[data-mode="ff"],#lamp[data-mode="rew"]{animation:none}
+}
+</style>
+</head>
+<body>
+<svg id="dev" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet" role="img" aria-label="카세트 플레이어">
+  <defs>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="400">
+      <stop offset="0" stop-color="#efede9"/><stop offset="1" stop-color="#e2e0da"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c3036"/><stop offset="1" stop-color="#1b1e22"/>
+    </linearGradient>
+    <linearGradient id="shell" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#474d55"/><stop offset="1" stop-color="#31363c"/>
+    </linearGradient>
+    <linearGradient id="win" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b0d0f"/><stop offset="1" stop-color="#181b1f"/>
+    </linearGradient>
+    <filter id="drop" x="-20%" y="-20%" width="140%" height="165%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#1a1c20" flood-opacity=".28"/>
+    </filter>
+    <clipPath id="winClip"><rect x="60" y="96" width="200" height="64" rx="32"/></clipPath>
+  </defs>
+
+  <rect x="-900" y="-600" width="2600" height="1600" fill="url(#bg)"/>
+
+  <!-- 카세트 (길게 누르면 음악 연결) -->
+  <g id="door">
+    <rect x="28" y="28" width="496" height="344" rx="26" fill="url(#panel)" filter="url(#drop)"/>
+    <rect x="28.5" y="28.5" width="495" height="343" rx="25.5" fill="none" stroke="#fff" stroke-opacity=".07"/>
+    <g transform="translate(42 57) scale(1.46)">
+      <rect x="4" y="4" width="312" height="188" rx="14" fill="url(#shell)"/>
+      <rect x="4.5" y="4.5" width="311" height="187" rx="13.5" fill="none" stroke="#fff" stroke-opacity=".10"/>
+      <rect x="24" y="16" width="272" height="72" rx="6" fill="#f3eddf"/>
+      <path d="M24 24 V22 a6 6 0 0 1 6 -6 H290 a6 6 0 0 1 6 6 V24 Z" fill="#e2612c"/>
+      <line x1="40" y1="82" x2="280" y2="82" stroke="#ddd5c0" stroke-width="1"/>
+      <text id="title" x="160" y="57" text-anchor="middle" font-size="18" font-weight="700" fill="#22252a">데모 테이프</text>
+      <text id="sub" x="160" y="73" text-anchor="middle" font-size="11" fill="#7b7261">로파이 84bpm</text>
+
+      <rect x="60" y="96" width="200" height="64" rx="32" fill="url(#win)"/>
+      <g clip-path="url(#winClip)">
+        <circle id="tapeL" cx="110" cy="128" r="30" fill="#3f2c21"/>
+        <circle id="tapeR" cx="210" cy="128" r="13" fill="#3f2c21"/>
+        <line id="run" x1="110" y1="158" x2="210" y2="141" stroke="#3f2c21" stroke-width="2.5"/>
+        <g id="hubL"></g>
+        <g id="hubR"></g>
+      </g>
+      <rect x="60.5" y="96.5" width="199" height="63" rx="31.5" fill="none" stroke="#fff" stroke-opacity=".08"/>
+
+      <path d="M96 168 h128 l10 24 h-148 z" fill="#25292e"/>
+      <circle cx="130" cy="181" r="4" fill="#111316"/>
+      <circle cx="190" cy="181" r="4" fill="#111316"/>
+      <g fill="#282c32" stroke="#fff" stroke-opacity=".12" stroke-width=".8">
+        <circle cx="15" cy="15" r="3.4"/><circle cx="305" cy="15" r="3.4"/>
+        <circle cx="15" cy="181" r="3.4"/><circle cx="305" cy="181" r="3.4"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- 오른쪽 정보 -->
+  <text x="556" y="57" font-size="16" font-weight="600" letter-spacing=".4" fill="#1f2226">포켓 워크</text>
+
+  <g id="keepBtn" role="button" aria-pressed="true" aria-label="화면 유지" data-on="1">
+    <rect x="640" y="22" width="140" height="60" fill="transparent" pointer-events="all"/>
+    <rect class="kbg" x="664" y="36" width="112" height="32" rx="16"/>
+    <g class="kicon" transform="translate(680 43)">
+      <rect x="0" y="7" width="13" height="10" rx="2.2"/>
+      <path class="shut" d="M2.5 7V4.8a4 4 0 0 1 8 0V7" fill="none" stroke-width="1.8" stroke-linecap="round"/>
+      <path class="sopen" d="M2.5 7V4.8a4 4 0 0 1 8 0" fill="none" stroke-width="1.8" stroke-linecap="round"/>
+    </g>
+    <text class="ktxt" x="700" y="56.5" font-size="12" font-weight="500">화면 유지</text>
+  </g>
+
+  <circle id="lamp" cx="560" cy="116" r="4" data-mode="stop"/>
+  <text id="modeText" x="572" y="120.5" font-size="12.5" font-weight="500" letter-spacing=".3" fill="#6d7278">정지</text>
+
+  <text id="time" x="554" y="184" font-size="58" font-weight="300" letter-spacing="-1.5" fill="#1f2226" style="font-variant-numeric:tabular-nums">00:00</text>
+  <text id="total" x="776" y="184" font-size="15" text-anchor="end" fill="#8a8f95" style="font-variant-numeric:tabular-nums">/ 00:00</text>
+
+  <rect x="556" y="208" width="220" height="3" rx="1.5" fill="#d6d4ce"/>
+  <rect id="prog" x="556" y="208" width="0" height="3" rx="1.5" fill="#e2612c"/>
+  <circle id="knob" cx="556" cy="209.5" r="5.5" fill="#e2612c" stroke="#ecebe7" stroke-width="2"/>
+
+  <text id="msg" x="556" y="240" font-size="12" fill="#8a8f95"></text>
+
+  <line x1="556" y1="290" x2="776" y2="290" stroke="#d6d4ce" stroke-width="1"/>
+  <g font-size="11.5">
+    <text id="k1" x="556" y="314" font-weight="600" fill="#4c5157"></text><text id="v1" x="640" y="314" fill="#8a8f95"></text>
+    <text id="k2" x="556" y="332" font-weight="600" fill="#4c5157"></text><text id="v2" x="640" y="332" fill="#8a8f95"></text>
+    <text id="k3" x="556" y="350" font-weight="600" fill="#4c5157"></text><text id="v3" x="640" y="350" fill="#8a8f95"></text>
+    <text id="k4" x="556" y="368" font-weight="600" fill="#4c5157"></text><text id="v4" x="640" y="368" fill="#8a8f95"></text>
+  </g>
+</svg>
+
+<input type="file" id="file" accept="audio/*" hidden>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const AC = window.AudioContext || window.webkitAudioContext;
+const NS = 'http://www.w3.org/2000/svg';
+const NATIVE = typeof window.NativeHost !== 'undefined';
+
+const el = {
+  tapeL:$('tapeL'), tapeR:$('tapeR'), hubL:$('hubL'), hubR:$('hubR'), run:$('run'),
+  title:$('title'), sub:$('sub'), modeText:$('modeText'), time:$('time'), total:$('total'),
+  prog:$('prog'), lamp:$('lamp'), msg:$('msg'), file:$('file'), keep:$('keepBtn'),
+  knob:$('knob'),
+  k:[1,2,3,4].map(i => $('k' + i)), v:[1,2,3,4].map(i => $('v' + i))
+};
+
+const svgEl = (parent, tag, attrs) => {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  parent.appendChild(e);
+  return e;
+};
+
+/* ---------- 그림 만들기 ---------- */
+const CL = {x:110, y:128}, CR = {x:210, y:128};
+const RMIN = 13, RMAX = 30;
+
+function buildHub(g, cx, cy){
+  svgEl(g, 'circle', {cx, cy, r:12, fill:'#e6e2d6'});
+  svgEl(g, 'circle', {cx, cy, r:7.5, fill:'#14171a'});
+  for (let i = 0; i < 6; i++){
+    svgEl(g, 'rect', {x:cx-1.3, y:cy-7.6, width:2.6, height:4.2, fill:'#e6e2d6', transform:`rotate(${i*60} ${cx} ${cy})`});
+  }
+}
+buildHub(el.hubL, CL.x, CL.y);
+buildHub(el.hubR, CR.x, CR.y);
+
+// 안내 문구
+const legend = NATIVE
+  ? [['톡','재생 · 정지'], ['볼륨 +','뒤로 감기'], ['볼륨 −','앞으로 감기'], ['카세트 길게','음악 앱 연결']]
+  : [['톡','재생 · 정지'], ['왼쪽 끝','뒤로 감기'], ['오른쪽 끝','앞으로 감기'], ['카세트 길게','음악 넣기']];
+legend.forEach(([k, v], i) => { el.k[i].textContent = k; el.v[i].textContent = v; });
+
+/* ---------- 오디오 상태 ---------- */
+let ctx = null, gain = null, analyser = null, freq = null;
+let buffer = null, revBuffer = null, duration = 0;
+let demoBuf = null;
+let src = null;
+let mode = 'stop';          // 실제 동작: stop | play | ff | rew
+let baseMode = 'stop';      // 감기를 멈췄을 때 돌아갈 상태
+let seekHold = null;        // 감기 중인 방향: ff | rew | null
+let seekStart = 0, releaseTimer = null;
+let pos = 0, t0 = 0, p0 = 0, dir = 1, rate = 1;
+const SEEK_RATE = 4;
+const MIN_SEEK_MS = 0;      // 버튼을 떼면 바로 멈춘다 (누르는 동안만 감기)
+
+const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+const fmt = s => {
+  s = Math.max(0, Math.floor(s));
+  return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+};
+const setNote = t => { el.msg.textContent = t; };
+
+/* ---------- 앱 모드: 폰에서 지금 나오는 음악의 상태(안드로이드가 알려줌) ---------- */
+const sys = {granted:false, active:false, playing:false, pos:0, dur:0, at:0, key:''};
+function refreshLabel(o){
+  if (!sys.granted){
+    setLabel('연결이 필요해요', '카세트를 길게 눌러 허용');
+    setNote('알림 접근을 허용해 주세요');
+  } else if (!sys.active){
+    setLabel('테이프 없음', '음악 앱에서 재생해 보세요');
+    setNote('');
+  } else {
+    setLabel(o.title || '재생 중인 음악', (o.artist || '').slice(0, 26));
+    setNote('');
+  }
+}
+
+function initCtx(){
+  if (!AC){ setNote('소리 재생을 지원하지 않는 환경이에요'); return; }
+  if (!ctx){
+    ctx = new AC();
+    gain = ctx.createGain();
+    analyser = ctx.createAnalyser();
+    analyser.fftSize = 64;
+    analyser.smoothingTimeConstant = 0.6;
+    gain.connect(analyser);
+    analyser.connect(ctx.destination);
+    freq = new Uint8Array(analyser.frequencyBinCount);
+  }
+  if (ctx.state === 'suspended') ctx.resume();
+}
+
+function clack(){
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'square';
+  o.frequency.setValueAtTime(220, t);
+  o.frequency.exponentialRampToValueAtTime(60, t + 0.04);
+  g.gain.setValueAtTime(0.16, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(t); o.stop(t + 0.06);
+}
+
+/* ---------- 데모 음악 (직접 합성) ---------- */
+async function buildDemo(){
+  const sr = 44100, bpm = 84, beat = 60 / bpm, nbars = 16, dur = nbars * 4 * beat;
+  const oc = new OfflineAudioContext(2, Math.ceil(dur * sr), sr);
+  const master = oc.createGain(); master.gain.value = 0.55;
+  const lp = oc.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2800; lp.Q.value = 0.5;
+  master.connect(lp); lp.connect(oc.destination);
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+
+  const tone = (m, t, len, type, vol, pan = 0) => {
+    const o = oc.createOscillator(), g = oc.createGain();
+    o.type = type; o.frequency.value = mtof(m);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    o.connect(g);
+    if (oc.createStereoPanner){
+      const p = oc.createStereoPanner(); p.pan.value = pan;
+      g.connect(p); p.connect(master);
+    } else g.connect(master);
+    o.start(t); o.stop(t + len + 0.02);
+  };
+
+  const nb = oc.createBuffer(1, sr, sr), nd = nb.getChannelData(0);
+  for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+  const noise = (t, len, type, f, vol) => {
+    const s = oc.createBufferSource(); s.buffer = nb; s.loop = true;
+    const flt = oc.createBiquadFilter(); flt.type = type; flt.frequency.value = f;
+    const g = oc.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    s.connect(flt); flt.connect(g); g.connect(master);
+    s.start(t); s.stop(t + len + 0.02);
+  };
+  const kick = t => {
+    const o = oc.createOscillator(), g = oc.createGain();
+    o.frequency.setValueAtTime(130, t);
+    o.frequency.exponentialRampToValueAtTime(42, t + 0.16);
+    g.gain.setValueAtTime(0.9, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.3);
+  };
+
+  const prog = [
+    {bass:45, ch:[57,60,64,67]},   // Am7
+    {bass:41, ch:[53,57,60,64]},   // Fmaj7
+    {bass:48, ch:[55,59,64,67]},   // Cmaj7
+    {bass:43, ch:[55,59,62,64]}    // G6
+  ];
+  const scale = [69,72,74,76,79,81];
+  let seed = 7;
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+
+  for (let b = 0; b < nbars; b++){
+    const c = prog[b % 4], t = b * 4 * beat;
+    c.ch.forEach((m, i) => tone(m, t + i * 0.012, 4 * beat * 0.98, 'triangle', 0.05, i % 2 ? 0.3 : -0.3));
+    tone(c.bass, t, beat * 1.8, 'sine', 0.22);
+    tone(c.bass, t + 2.5 * beat, beat * 1.2, 'sine', 0.16);
+    kick(t); kick(t + 2 * beat);
+    if (b % 2) kick(t + 3.5 * beat);
+    noise(t + beat, 0.16, 'bandpass', 1800, 0.35);
+    noise(t + 3 * beat, 0.16, 'bandpass', 1800, 0.35);
+    for (let h = 0; h < 8; h++){
+      const sw = h % 2 ? beat * 0.05 : 0;
+      noise(t + h * beat / 2 + sw, 0.05, 'highpass', 7000, h % 2 ? 0.10 : 0.16);
+    }
+    for (let e = 0; e < 8; e++){
+      if (b >= 2 && rnd() < 0.45){
+        const m = scale[Math.floor(rnd() * scale.length)];
+        const sw = e % 2 ? beat * 0.05 : 0;
+        tone(m, t + e * beat / 2 + sw, beat * 0.9, 'triangle', 0.09, 0.2);
+      }
+    }
+  }
+  return await oc.startRendering();
+}
+
+const demoReady = NATIVE ? Promise.resolve() : buildDemo().then(b => {
+  demoBuf = b;
+  if (!buffer){ duration = b.duration; }
+}).catch(() => {});
+
+let readyP = null;
+function ready(){
+  if (!readyP){
+    readyP = (async () => {
+      await demoReady;
+      if (!buffer){
+        if (demoBuf && ctx) setBuffer(demoBuf, '데모 테이프', '로파이 84bpm');
+        else if (!demoBuf) setNote('데모 음악을 만들지 못했어요');
+      }
+    })();
+  }
+  return readyP;
+}
+
+function setLabel(title, sub){
+  el.title.textContent = title.length > 15 ? title.slice(0, 14) + '…' : title;
+  el.sub.textContent = sub;
+}
+
+function setBuffer(b, title, sub){
+  stopSource();
+  buffer = b; duration = b.duration; pos = 0;
+  const n = b.length, ch = b.numberOfChannels;
+  const rb = ctx.createBuffer(ch, n, b.sampleRate);
+  for (let c = 0; c < ch; c++){
+    const s = b.getChannelData(c), d = rb.getChannelData(c);
+    for (let i = 0; i < n; i++) d[i] = s[n - 1 - i];
+  }
+  revBuffer = rb;
+  setLabel(title, sub);
+}
+
+/* ---------- 재생 엔진 ---------- */
+function stopSource(){
+  if (src){
+    try { src.stop(); } catch(e){}
+    try { src.disconnect(); } catch(e){}
+    src = null;
+  }
+}
+
+function syncPos(){
+  if (src && ctx) pos = clamp(p0 + dir * rate * (ctx.currentTime - t0), 0, duration);
+}
+
+function startSource(){
+  stopSource();
+  if (!ctx || !buffer || mode === 'stop') return;
+  const rev = mode === 'rew';
+  if (mode === 'play' && pos >= duration - 0.05) pos = 0;
+  if (mode === 'ff' && pos >= duration - 0.05) return;
+  if (rev && pos <= 0.05) return;
+  const s = ctx.createBufferSource();
+  s.buffer = rev ? revBuffer : buffer;
+  s.playbackRate.value = mode === 'play' ? 1 : SEEK_RATE;
+  gain.gain.value = mode === 'play' ? 1 : 0.5;
+  s.connect(gain);
+  const off = rev ? duration - pos : pos;
+  s.start(0, clamp(off, 0, duration - 0.001));
+  t0 = ctx.currentTime; p0 = pos;
+  dir = rev ? -1 : 1;
+  rate = mode === 'play' ? 1 : SEEK_RATE;
+  src = s;
+}
+
+function apply(){
+  const want = seekHold || baseMode;
+  if (want === mode && (want === 'stop' || src)) return;
+  syncPos();
+  mode = want;
+  startSource();
+}
+
+function togglePower(){
+  if (NATIVE){
+    if (sys.active){   // 화면부터 바로 반응
+      const now = performance.now();
+      sys.pos = sys.pos + (sys.playing ? now - sys.at : 0);
+      sys.playing = !sys.playing;
+      sys.at = now;
+    }
+    window.NativeHost.toggle();
+    return;
+  }
+  initCtx(); clack();
+  setNote('');
+  baseMode = baseMode === 'play' ? 'stop' : 'play';
+  apply();
+  ready().then(apply);
+}
+
+function pressSeek(kind){
+  if (NATIVE){
+    clearTimeout(releaseTimer);
+    seekHold = kind; seekStart = performance.now();
+    if (!sys.granted) setNote('감기는 알림 접근 허용이 필요해요');
+    window.NativeHost.seekStart(kind);
+    return;
+  }
+  initCtx(); clack();
+  clearTimeout(releaseTimer);
+  seekHold = kind; seekStart = performance.now();
+  apply();
+  ready().then(apply);
+}
+
+function releaseSeek(kind){
+  if (seekHold !== kind) return;
+  const held = performance.now() - seekStart;
+  const finish = () => {
+    if (seekHold === kind){
+      seekHold = null;
+      if (NATIVE) window.NativeHost.seekStop();
+      else { clack(); apply(); }
+    }
+  };
+  clearTimeout(releaseTimer);
+  if (held < MIN_SEEK_MS) releaseTimer = setTimeout(finish, MIN_SEEK_MS - held);
+  else finish();
+}
+
+/* ---------- 앱(안드로이드)에서 물리 볼륨 키가 호출하는 통로 ---------- */
+window.pocketWalk = {
+  press(kind){ if (kind === 'ff' || kind === 'rew') pressSeek(kind); },
+  release(kind){ if (kind === 'ff' || kind === 'rew') releaseSeek(kind); },
+  stop(){
+    clearTimeout(releaseTimer);
+    seekHold = null;
+    baseMode = 'stop';
+    apply();
+  },
+  // 안드로이드가 지금 재생 중인 음악의 상태를 보내준다
+  update(o){
+    sys.granted = !!o.granted; sys.active = !!o.active; sys.playing = !!o.playing;
+    sys.pos = o.pos || 0; sys.dur = o.dur || 0; sys.at = performance.now();
+    const key = [sys.granted, sys.active, o.title, o.artist].join('|');
+    if (key !== sys.key){ sys.key = key; refreshLabel(o); }
+  }
+};
+
+/* ---------- 화면 유지 (화면이 꺼지지 않게) ---------- */
+let keepOn = true;
+try {
+  keepOn = NATIVE ? !!window.NativeHost.getKeepScreenOn() : localStorage.getItem('pw_keep') !== '0';
+} catch(e){}
+let wakeLock = null;
+async function applyKeep(){
+  el.keep.setAttribute('data-on', keepOn ? '1' : '0');
+  el.keep.setAttribute('aria-pressed', String(keepOn));
+  if (NATIVE){ try { window.NativeHost.setKeepScreenOn(keepOn); } catch(e){} return; }
+  try { localStorage.setItem('pw_keep', keepOn ? '1' : '0'); } catch(e){}
+  try {
+    if (keepOn && navigator.wakeLock && !wakeLock){
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } else if (!keepOn && wakeLock){
+      await wakeLock.release(); wakeLock = null;
+    }
+  } catch(e){}
+}
+let noteTimer = null;
+function flashNote(t){
+  setNote(t);
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => { if (el.msg.textContent === t) setNote(''); }, 2000);
+}
+function toggleKeep(){
+  keepOn = !keepOn;
+  applyKeep();
+  flashNote(keepOn ? '화면이 꺼지지 않아요' : '화면이 자동으로 꺼져요');
+}
+applyKeep();
+
+/* ---------- 터치: 톡 = 재생/정지, 양쪽 끝 길게 = 감기, 카세트 길게 = 음악 넣기 ---------- */
+const EDGE = 0.16, HOLD_MS = 260, LONG_MS = 700, MOVE_PX = 14;
+let press = null;
+const zoneOf = x => {
+  if (NATIVE) return 'mid';
+  const w = window.innerWidth;
+  return x < w * EDGE ? 'rew' : (x > w * (1 - EDGE) ? 'ff' : 'mid');
+};
+function clearPress(){
+  if (!press) return;
+  clearTimeout(press.hold); clearTimeout(press.long);
+  if (press.seeking) releaseSeek(press.zone);
+  press = null;
+}
+
+window.addEventListener('pointerdown', e => {
+  clearPress();
+  const p = {
+    id: e.pointerId, x: e.clientX, y: e.clientY,
+    zone: zoneOf(e.clientX),
+    door: !!(e.target.closest && e.target.closest('#door')),
+    keep: !!(e.target.closest && e.target.closest('#keepBtn')),
+    moved: false, seeking: false, fired: false, hold: null, long: null
+  };
+  if (p.keep){ press = p; return; }
+  if (p.zone !== 'mid'){
+    p.hold = setTimeout(() => { p.seeking = true; pressSeek(p.zone); }, HOLD_MS);
+  } else if (p.door){
+    p.long = setTimeout(() => {
+      if (!p.moved){
+        p.fired = true;
+        if (NATIVE) window.NativeHost.openAccess();
+        else { initCtx(); el.file.click(); }
+      }
+    }, LONG_MS);
+  }
+  press = p;
+});
+
+window.addEventListener('pointermove', e => {
+  if (!press || e.pointerId !== press.id) return;
+  if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > MOVE_PX){
+    press.moved = true;
+    if (!press.seeking){ clearTimeout(press.hold); clearTimeout(press.long); }
+  }
+});
+
+function endPress(e){
+  if (!press || e.pointerId !== press.id) return;
+  const p = press;
+  press = null;
+  clearTimeout(p.hold); clearTimeout(p.long);
+  if (p.keep){ if (!p.moved && e.type === 'pointerup') toggleKeep(); return; }
+  if (p.seeking) releaseSeek(p.zone);
+  else if (!p.fired && !p.moved && e.type === 'pointerup') togglePower();
+}
+window.addEventListener('pointerup', endPress);
+window.addEventListener('pointercancel', endPress);
+window.addEventListener('contextmenu', e => e.preventDefault());
+
+/* ---------- 키보드(컴퓨터에서 볼 때) ---------- */
+const keyMap = {ArrowUp:'ff', ArrowRight:'ff', ArrowDown:'rew', ArrowLeft:'rew'};
+window.addEventListener('keydown', e => {
+  if (e.repeat) return;
+  if (keyMap[e.key]){ e.preventDefault(); pressSeek(keyMap[e.key]); }
+  else if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); togglePower(); }
+});
+window.addEventListener('keyup', e => {
+  if (keyMap[e.key]){ e.preventDefault(); releaseSeek(keyMap[e.key]); }
+});
+
+/* ---------- 음악 불러오기 ---------- */
+el.file.addEventListener('change', async () => {
+  const f = el.file.files && el.file.files[0];
+  if (!f) return;
+  initCtx();
+  if (!ctx) return;
+  try {
+    setNote('테이프 넣는 중…');
+    const ab = await f.arrayBuffer();
+    const b = await ctx.decodeAudioData(ab);
+    setBuffer(b, f.name.replace(/\.[^.]+$/, ''), '내 음악');
+    baseMode = 'play';
+    apply();
+    setNote('');
+  } catch(err){
+    setNote('재생할 수 없는 파일이에요 (mp3, m4a, wav)');
+  }
+  el.file.value = '';
+});
+
+/* ---------- 화면 갱신 ---------- */
+const MODE_TEXT = {stop:'정지', play:'재생 중', ff:'앞으로 감는 중', rew:'뒤로 감는 중'};
+const TARGET = {stop:0, play:-150, ff:-900, rew:900};   // 릴 회전 속도(도/초)
+const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const speedScale = reduce ? 0.4 : 1;
+let vel = 0, angL = 0, angR = 0, last = performance.now();
+let shown = {mode:'', time:'', total:''};
+
+function tick(now){
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+
+  if (NATIVE){
+    mode = seekHold || (sys.playing ? 'play' : 'stop');
+    const extra = (sys.playing && !seekHold) ? (performance.now() - sys.at) : 0;
+    duration = sys.dur > 0 ? sys.dur / 1000 : 0;
+    pos = Math.max(0, (sys.pos + extra) / 1000);
+    if (duration && pos > duration) pos = duration;
+  } else if (src && ctx){
+    syncPos();
+    if (mode === 'play' && pos >= duration - 0.02){ pos = 0; startSource(); }
+    else if (mode === 'ff' && pos >= duration - 0.05){ pos = duration - 0.05; stopSource(); }
+    else if (mode === 'rew' && pos <= 0.05){ pos = 0; stopSource(); }
+  }
+
+  vel += (TARGET[mode] * speedScale - vel) * Math.min(1, dt * 7);
+  const p = duration ? pos / duration : (NATIVE && sys.active ? 0.5 : 0);
+  const rL = RMIN + (RMAX - RMIN) * (1 - p);
+  const rR = RMIN + (RMAX - RMIN) * p;
+  angL += vel * dt * (21 / rL);
+  angR += vel * dt * (21 / rR);
+
+  el.tapeL.setAttribute('r', rL.toFixed(2));
+  el.tapeR.setAttribute('r', rR.toFixed(2));
+  el.run.setAttribute('y1', (CL.y + rL).toFixed(2));
+  el.run.setAttribute('y2', (CR.y + rR).toFixed(2));
+  el.hubL.setAttribute('transform', `rotate(${angL.toFixed(1)} ${CL.x} ${CL.y})`);
+  el.hubR.setAttribute('transform', `rotate(${angR.toFixed(1)} ${CR.x} ${CR.y})`);
+
+  if (shown.mode !== mode){
+    shown.mode = mode;
+    el.modeText.textContent = MODE_TEXT[mode];
+    el.lamp.setAttribute('data-mode', mode);
+  }
+  const ts = fmt(pos);
+  if (shown.time !== ts){ shown.time = ts; el.time.textContent = ts; }
+  const tt = duration > 0 ? '/ ' + fmt(duration) : '/ --:--';
+  if (shown.total !== tt){ shown.total = tt; el.total.textContent = tt; }
+  el.prog.setAttribute('width', (p * 220).toFixed(1));
+  el.knob.setAttribute('cx', (556 + p * 220).toFixed(1));
+
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
